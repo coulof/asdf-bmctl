@@ -1,0 +1,44 @@
+#!/bin/bash
+
+set -e
+set -o pipefail
+
+CMD=gsutil
+BMCTL_BUCKET="gs://anthos-baremetal-release/bmctl"
+
+install_bmctl() {
+  local install_type=$1
+  local version=$2
+  local install_path=$3
+  local bin_install_path="$install_path/bin"
+  local platform="$(uname | tr '[:upper:]' '[:lower:]')"
+  local dl_path="$(get_download_url $version $platform)/bmctl"
+
+  echo "Creating bin directory"
+  mkdir -p "${bin_install_path}"
+
+  echo "Cleaning previous binaries"
+  rm -f ${bin_install_path}/bmctl* 2>/dev/null || true
+
+  echo "Copying bmctl from ${dl_path} to ${bin_install_path}"
+  $CMD cp "${dl_path}" "${bin_install_path}"
+  chmod +x ${bin_install_path}/bmctl
+}
+
+get_download_url() {
+  local version=$1
+  local platform=$2
+  local url=""
+  if $CMD ls "${BMCTL_BUCKET}/${version}/${platform}" > /dev/null 2>&1; then
+    url="${BMCTL_BUCKET}/${version}/${platform}"
+  elif $CMD ls "${BMCTL_BUCKET}/${version}/${platform}-amd64" > /dev/null 2>&1 ; then
+    url="${BMCTL_BUCKET}/${version}/${platform}-amd64"
+  else
+    echo "Architecture ${platform} not found for version: ${version}"
+    exit 1
+  fi
+
+  echo $url
+}
+
+install_bmctl $ASDF_INSTALL_TYPE $ASDF_INSTALL_VERSION $ASDF_INSTALL_PATH

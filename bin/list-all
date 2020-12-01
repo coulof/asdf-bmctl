@@ -1,0 +1,9 @@
+#!/bin/bash
+CMD=gsutil
+BMCTL_BUCKET="gs://anthos-baremetal-release/bmctl"
+
+if ! type "$CMD" > /dev/null; then
+  echo "$CMD is missing"
+  exit 1
+fi
+$CMD ls $BMCTL_BUCKET | sed -E "s@${BMCTL_BUCKET}/(.*)/@\1@g" | tr '\n' ' '
